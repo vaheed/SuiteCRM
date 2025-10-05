@@ -1,0 +1,33 @@
+version: '3.8'
+services:
+  db:
+    image: mariadb:10.6
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: suitecrm
+      MYSQL_USER: suitecrm
+      MYSQL_PASSWORD: example
+    volumes:
+      - db_data:/var/lib/mysql
+
+  suitecrm:
+    build:
+      context: .
+      dockerfile: variants/php8.1-apache/Dockerfile
+    environment:
+      DB_HOST: db
+      DB_NAME: suitecrm
+      DB_USER: suitecrm
+      DB_PASSWORD: example
+      SUITECRM_VERSION: 8.0.4
+    volumes:
+      - suitecrm_data:/var/www/html
+      - ./uploads:/var/www/html/upload
+    ports:
+      - '8080:80'
+    depends_on:
+      - db
+
+volumes:
+  db_data:
+  suitecrm_data:
