@@ -1,45 +1,54 @@
 #!/bin/bash
 set -e
 
-# If web root empty, download SuiteCRM
-if [ -z "$(ls -A /var/www/html 2>/dev/null)" ]; then
-  echo "Web root empty — downloading SuiteCRM..."
-  SUITE_VERSION="${SUITECRM_VERSION:-latest}"
-  if [ "$SUITE_VERSION" = "latest" ]; then
-    # default to 8.x branch if PHP >= 8, otherwise use 7.12
-    PHP_VERSION=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')
-    if [[ "$PHP_VERSION" == 8.* ]]; then
+if [ -n "$SUITECRM_URL" ]; then
+  DOWNLOAD_URL="$SUITECRM_URL"
+else
+  case "${SUITECRM_VERSION:-latest}" in
+    latest|8|8.*)
+      if [[ "${SUITECRM_VERSION}" =~ ^8([.]|$) ]]; then
+        DOWNLOAD_URL="https://suitecrm.com/download/166/suite89/565428/suitecrm-8-9-0.zip"
+      else
+        DOWNLOAD_URL="https://github.com/salesagility/SuiteCRM/archive/refs/heads/8.x.zip"
+      fi
+      ;;
+    7*|7.*)
+      if [[ "${SUITECRM_VERSION}" == "7.14.7" ]]; then
+        DOWNLOAD_URL="https://suitecrm.com/download/141/suite714/565364/suitecrm-7-14-7.zip"
+      else
+        DOWNLOAD_URL="https://github.com/salesagility/SuiteCRM/archive/refs/tags/v7.12.7.zip"
+      fi
+      ;;
+    *)
       DOWNLOAD_URL="https://github.com/salesagility/SuiteCRM/archive/refs/heads/8.x.zip"
-    else
-      DOWNLOAD_URL="https://github.com/salesagility/SuiteCRM/archive/refs/tags/v7.12.7.zip"
-    fi
-  else
-    # allow explicit tag or URL
-    if [[ "$SUITE_VERSION" =~ ^https?:// ]]; then
-      DOWNLOAD_URL="$SUITE_VERSION"
-    else
-      DOWNLOAD_URL="https://github.com/salesagility/SuiteCRM/archive/refs/tags/${SUITE_VERSION}.zip"
-    fi
-  fi
+      ;;
+  esac
+fi
 
-  echo "Downloading $DOWNLOAD_URL"
-  curl -fsSL "$DOWNLOAD_URL" -o /tmp/suitecrm.zip || true
-  if [ -f /tmp/suitecrm.zip ]; then
-    unzip /tmp/suitecrm.zip -d /tmp
-    # find the extracted dir (SuiteCRM-*)
-    EXDIR=$(ls -d /tmp/SuiteCRM-* | head -n1)
-    if [ -d "$EXDIR" ]; then
-      mv "$EXDIR"/* /var/www/html/
-      rm -rf "$EXDIR"
+if [ -z "$(ls -A /var/www/html 2>/dev/null)" ]; then
+  echo "Web root empty — attempting download from: $DOWNLOAD_URL"
+  mkdir -p /tmp/suitecrm_dl
+  curl -fsSL "$DOWNLOAD_URL" -o /tmp/suitecrm_dl/suitecrm.zip || true
+  if [ -f /tmp/suitecrm_dl/suitecrm.zip" ]; then
+    unzip /tmp/suitecrm_dl/suitecrm.zip -d /tmp/suitecrm_dl
+    EXDIR=$(find /tmp/suitecrm_dl -maxdepth 1 -type d -name 'SuiteCRM*' -print -quit)
+    if [ -z "$EXDIR" ]; then
+      EXDIR=$(find /tmp/suitecrm_dl -maxdepth 1 -type d ! -path /tmp/suitecrm_dl -print -quit)
     fi
-    rm -f /tmp/suitecrm.zip
+    if [ -n "$EXDIR" ]; then
+      shopt -s dotglob
+      mv "$EXDIR"/* /var/www/html/
+      shopt -u dotglob
+    else
+      mv /tmp/suitecrm_dl/* /var/www/html/ || true
+    fi
+    rm -rf /tmp/suitecrm_dl
     chown -R www-data:www-data /var/www/html
   else
-    echo "Warning: couldn't download SuiteCRM. Mount your files into /var/www/html"
+    echo "Warning: couldn't download SuiteCRM. Mount your files into /var/www/html or set SUITECRM_URL."
   fi
 fi
 
-# Ensure permissions
 chown -R www-data:www-data /var/www/html || true
 
 exec "$@"
