@@ -1,7 +1,4 @@
-# suitecrm-docker
-
-[![GitHub Actions](https://img.shields.io/github/workflow/status/vaheed/suitcrm/Build%20and%20Publish?label=CI%2FCD)](https://github.com/vaheed/suitcrm/actions)
-[![Docker Pulls](https://img.shields.io/docker/pulls/vaheed/suitecrm)](https://hub.docker.com/r/vaheed/suitecrm)
+# SuiteCRM-docker
 
 **Multi-variant Docker images for SuiteCRM (LTS and latest versions)**
 Supports PHP 7.4 (LTS) and PHP 8.1 (latest), with all required PHP extensions for SuiteCRM.
