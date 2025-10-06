@@ -29,7 +29,7 @@ if [ -z "$(ls -A /var/www/html 2>/dev/null)" ]; then
   echo "Web root empty — attempting download from: $DOWNLOAD_URL"
   mkdir -p /tmp/suitecrm_dl
   curl -fsSL "$DOWNLOAD_URL" -o /tmp/suitecrm_dl/suitecrm.zip || true
-  if [ -f /tmp/suitecrm_dl/suitecrm.zip" ]; then
+  if [ -f /tmp/suitecrm_dl/suitecrm.zip ]; then
     unzip /tmp/suitecrm_dl/suitecrm.zip -d /tmp/suitecrm_dl
     EXDIR=$(find /tmp/suitecrm_dl -maxdepth 1 -type d -name 'SuiteCRM*' -print -quit)
     if [ -z "$EXDIR" ]; then
